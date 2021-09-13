@@ -29,8 +29,15 @@ class JiraClient
     }
 
 
-    public function getIssues(?string $project=null) : \Psr\Http\Message\ResponseInterface
+    /**
+     * Fetch issues from Jira.
+     * @param string|null $project - optionally specify the project to get the issues of.
+     * @return array - a collecton of Issue objects.
+     * @throws Exceptions\ExceptionRequestFailed
+     */
+    public function getIssues(?string $project=null) : array
     {
+        $issues = [];
         $method = "GET";
 
         if ($project !== null)
@@ -51,16 +58,50 @@ class JiraClient
         }
 
         $request = $this->createRequest($method, $url);
-        return $this->m_messagingClient->sendRequest($request);
+        $response = $this->m_messagingClient->sendRequest($request);
+
+        if ($response->getStatusCode() === 200)
+        {
+            $bodyObject = json_decode($response->getBody()->getContents(), true);
+            $issuesArray = $bodyObject['issues'];
+
+            foreach ($issuesArray as $issueArray)
+            {
+                $issues[] = Issue::createFromResponseArray($issueArray);
+            }
+        }
+        else
+        {
+            throw new Exceptions\ExceptionRequestFailed($response);
+        }
+
+        return $issues;
     }
 
 
-    public function getProjects() : \Psr\Http\Message\ResponseInterface
+    public function getProjects() : array
     {
+        $projects = [];
         $method = "GET";
         $url = "https://{$this->m_domain}.atlassian.net/rest/api/2/project";
         $request = $this->createRequest($method, $url);
-        return $this->m_messagingClient->sendRequest($request);
+        $response = $this->m_messagingClient->sendRequest($request);
+
+        if ($response->getStatusCode() === 200)
+        {
+            $projectsArray = json_decode($response->getBody()->getContents(), true);
+
+            foreach ($projectsArray as $pojectArray)
+            {
+                $projects[] = Project::createFromResponseArray($pojectArray);
+            }
+        }
+        else
+        {
+            throw new Exceptions\ExceptionRequestFailed($response);
+        }
+
+        return $projects;
     }
 
 

@@ -4,6 +4,8 @@
  * An object to represent an issue in Jira
  */
 
+namespace Programster\Jira;
+
 class Issue
 {
     private string $m_expand;
@@ -13,23 +15,23 @@ class Issue
     private string $m_statusCategoryChangeDate;
     private $m_issueType;
     private ?int $m_timeSpent;
-    private string $m_project;
-    private string $m_fixVersions;
+    private Project $m_project;
+    private $m_fixVersions;
     private ?int $m_aggregatetimespent;
     private ?string $m_resolution;
     private ?string $m_resolutionDate;
-    private int $m_workRatio;
-    private ?int $m_lastViewed;
-    private $m_watches;
-    private $m_created;
-    private $m_priority;
+    private float|int $m_workRatio;
+    private ?string $m_lastViewed;
+    private Watches $m_watches;
+    private int $m_createdAt;
+    private Priority $m_priority; // priority object
     private array $m_labels;
     private $m_timeEstimate;
     private $m_aggregateTimeOriginalEstimate;
     private array $m_versions;
     private array $m_issueLinks;
     private ?string $m_assignee;
-    private $m_updated;
+    private int $m_updated;
     private $m_status;
     private array $m_components;
     private ?string $m_timeOriginalEstimate;
@@ -37,14 +39,14 @@ class Issue
     private ?string $m_security;
     private ?string $m_aggregatetimeestimate;
     private string $m_summary;
-    private $m_creator;
+    private User $m_creator; // user object
     private array $m_subtasks;
     private $m_reporter;
-    private $m_aggregateprogress;
+    private array $m_progress; // progress object
+    private array $m_aggregateprogress; // progress object
     private $m_environment;
     private ?string $m_dueDate;
-    private $m_progress;
-    private $m_votes;
+    private array $m_votes;
 
 
 
@@ -54,47 +56,53 @@ class Issue
     public static function createFromResponseArray(array $arrayForm)
     {
         $issue = new Issue();
+        //die(print_r($arrayForm, true));
 
         $issue->m_expand = $arrayForm['expand'];
         $issue->m_id = $arrayForm['id'];
         $issue->m_self = $arrayForm['self'];
         $issue->m_key = $arrayForm['key'];
-        $issue->m_statusCategoryChangeDate = $arrayForm['statuscategorychangedate'];
-        $issue->m_issueType = $arrayForm['issueType'];
-        $issue->m_timeSpent = $arrayForm['timeSpent'];
-        $issue->m_project = $arrayForm['project'];
-        $issue->m_fixVersions = $arrayForm['fixVersions'];
-        $issue->m_aggregateTimeSpent = $arrayForm['aggregatetimespent'];
-        $issue->m_resolution = $arrayForm['resolution'];
-        $issue->m_resolutionDate = $arrayForm['resolutiondate'];
-        $issue->m_workRatio = $arrayForm['workratio'];
-        $issue->m_lastViewed = $arrayForm['lastViewed'];
-        $issue->m_watches = $arrayForm['watches'];
-        $issue->m_created = $arrayForm['created'];
-        $issue->m_priority = $arrayForm['priority'];
-        $issue->m_labels = $arrayForm['labels'];
-        $issue->m_timeEstimate = $arrayForm['timeEstimate'];
-        $issue->m_aggregateTimeOriginalEstimate = $arrayForm['aggregateTimeOriginalEstimate'];
-        $issue->m_versions = $arrayForm['versions'];
-        $issue->m_issueLinks = $arrayForm['issueLinks'];
-        $issue->m_assignee = $arrayForm['assignee'];
-        $issue->m_updated = $arrayForm['updated'];
-        $issue->m_status = $arrayForm['status'];
-        $issue->m_components = $arrayForm['components'];
-        $issue->m_timeOriginalEstimate = $arrayForm['timeOriginalEstimate'];
-        $issue->m_description = $arrayForm['description'];
-        $issue->m_security = $arrayForm['security'];
-        $issue->m_aggregateTimeEstimate = $arrayForm['aggregatetimeestimate'];
-        $issue->m_summary = $arrayForm['summary'];
-        $issue->m_creator = $arrayForm['creator'];
-        $issue->m_subtasks = $arrayForm['subtasks'];
-        $issue->m_reporter = $arrayForm['reporter'];
-        $issue->m_aggregateProgress = $arrayForm['aggregateprogress'];
-        $issue->m_environment = $arrayForm['environment'];
-        $issue->m_dueDate = $arrayForm['dueDate'];
-        $issue->m_progress = $arrayForm['progress'];
-        $issue->m_votes = $arrayForm['votes'];
 
+        $fields = $arrayForm['fields'];
+
+        $issue->m_statusCategoryChangeDate = $fields['statuscategorychangedate'];
+        $issue->m_issueType = IssueType::createFromResponseArray($fields['issuetype']);
+        $issue->m_timeSpent = $fields['timespent'];
+        $issue->m_project = Project::createFromResponseArray($fields['project']);
+        $issue->m_fixVersions = $fields['fixVersions'];
+        $issue->m_aggregateTimeSpent = $fields['aggregatetimespent'];
+        $issue->m_resolution = $fields['resolution'];
+        $issue->m_resolutionDate = $fields['resolutiondate'];
+        $issue->m_workRatio = $fields['workratio'];
+        $issue->m_lastViewed = $fields['lastViewed'];
+        $issue->m_watches = Watches::createFromResponseArray($fields['watches']);
+        $issue->m_createdAt = strtotime($fields['created']);
+        $issue->m_priority = Priority::createFromResponseArray($fields['priority']);
+        $issue->m_labels = $fields['labels'];
+        $issue->m_timeEstimate = $fields['timeestimate'];
+        $issue->m_aggregateTimeOriginalEstimate = $fields['aggregatetimeoriginalestimate'];
+        $issue->m_versions = $fields['versions'];
+        $issue->m_issueLinks = $fields['issuelinks'];
+        $issue->m_assignee = $fields['assignee'];
+        $issue->m_updated = strtotime($fields['updated']);
+        $issue->m_status = $fields['status'];
+        $issue->m_components = $fields['components'];
+        $issue->m_timeOriginalEstimate = $fields['timeoriginalestimate'];
+        $issue->m_description = $fields['description'];
+        $issue->m_security = $fields['security'];
+        $issue->m_aggregateTimeEstimate = $fields['aggregatetimeestimate'];
+        $issue->m_summary = $fields['summary'];
+        $issue->m_creator = User::createFromResponseArray($fields['creator']);
+        $issue->m_subtasks = $fields['subtasks'];
+        $issue->m_reporter = User::createFromResponseArray($fields['reporter']);
+        $issue->m_aggregateProgress = $fields['aggregateprogress'];
+        $issue->m_environment = $fields['environment'];
+        $issue->m_dueDate = $fields['duedate'];
+        $issue->m_progress = $fields['progress'];
+        $issue->m_votes = $fields['votes'];
+
+
+        //die(print_r($fields, true));
         return $issue;
     }
 
@@ -112,11 +120,11 @@ class Issue
     public function getAggregatetimespent() { return $this->m_aggregatetimespent; }
     public function getResolution() { return $this->m_resolution; }
     public function getResolutionDate() { return $this->m_resolutionDate; }
-    public function getWorkRatio() { return $this->m_workRatio; }
-    public function getLastViewed() { return $this->m_lastViewed; }
+    public function getWorkRatio() : float|int { return $this->m_workRatio; }
+    public function getLastViewed() : ?string { return $this->m_lastViewed; }
     public function getWatches() { return $this->m_watches; }
-    public function getCreated() { return $this->m_created; }
-    public function getPriority() { return $this->m_priority; }
+    public function getCreatedAt() : int { return $this->m_createdAt; }
+    public function getPriority() : Priority { return $this->m_priority; }
     public function getLabels() { return $this->m_labels; }
     public function getTimeEstimate() { return $this->m_timeEstimate; }
     public function getAggregateTimeOriginalEstimate() { return $this->m_aggregateTimeOriginalEstimate; }
